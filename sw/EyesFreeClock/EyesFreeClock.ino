@@ -1,22 +1,27 @@
-#define BUZZPIN 4           //the buzzer (or vibrator mosfet)
-#define BUTTONPIN 2         //the main button
-#define MODEBUTTONPIN 3     //the mode button
-
-#define SRLATCH 8
-#define SRCLK 12
-#define SRDATA 11
-
-#define BUTTONTIME 200      //delay between allowed button pressess. TODO: detect rollover
+#define VIBSIG 1            //the vibrator signal
+#define SOUNDCOMPIN 2       //the signal from the sound comparator
+//#define PIN3 3
+#define BUZZPIN 4           //the buzzer
+#define BUTTONPIN 5         //the main button
+#define MODEBUTTONPIN 6     //the mode button
+//#define PIN7 7
+#define SRLATCH 8           //the shift register pins - latch
+#define SRDATA 11           //data
+#define SRCLK 12            //clock
+//define PIN13 13
 
 //Beep timings
 #define BETWEENDELAY 800    //time to wait between tens and ones etc.
 #define NONZEROBEEPTIME 50  //the time to beep for a non-zero number
 #define ZEROBEEPTIME 300    //the time to beep for a zero
-#define BEEPDELAY 200        //the spacing between beeps of the same group
+#define BEEPDELAY 200       //the spacing between beeps of the same group
 #define GROUPDELAYADD 40    //the amount of delay between groupings (ie ... ... .. to make 8)
+
+#define SNAPDELAYMS 400
 
 #define enableSerial 0
 
+#include <assert.h>
 #include <DS3231.h>
 #include <Wire.h>
 
@@ -25,23 +30,54 @@ DS3231 Clock;
 bool H12 = false; //24 Hour Mode
 byte rtcHour, rtcMinute, rtcSecond;
 
-volatile int lastPress;             //time pulled from millis() of the last button press
+volatile bool button1Last = false;  //set to the previously recorded state of the buttons
+volatile bool button2Last = false;  //   so to avoid triggering every 20ms if held
 volatile bool button1Wait = false;  //triggered from interrupt if main button is pressed
 volatile bool button2Wait = false;  //triggered from interrupt if mode button is pressed
+
+volatile byte lastSnap = 0;
+volatile bool snapReady = false;
+
 
 bool timeSetMode = false;           //this flag will keep the program in time set mode.
 
 void setup() {
+  
+  //Set up button poll timer interrupts.
+  cli();
+  
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1  = 0;
+
+  OCR1A = 2400;
+  TCCR1B |= (1 << WGM12); //CTC
+  TCCR1B |= (1 << CS12); //256 Prescaler
+  TIMSK1 |= (1 << OCIE1A); //Timer interupt enable
+
+  //Port manipulation in timer interrupt will break if these assertions fail
+  assert(BUTTONPIN == 5);
+  assert(MODEBUTTONPIN == 6);
+
+  sei();
+
+  //Set up sound input interrupt
+  attachInterrupt(digitalPinToInterrupt(SOUNDCOMPIN), soundRegistered, RISING);
+  
+  //Set up Inputs
+  pinMode(BUTTONPIN, INPUT);
+  pinMode(MODEBUTTONPIN, INPUT);
+  pinMode(SOUNDCOMPIN, INPUT_PULLUP);
+
+  //Set up Outputs
+  pinMode(VIBSIG, OUTPUT);
   pinMode(BUZZPIN, OUTPUT);
-  pinMode(BUTTONPIN, INPUT_PULLUP);
-  pinMode(MODEBUTTONPIN, INPUT_PULLUP);
   pinMode(SRLATCH, OUTPUT);
   pinMode(SRCLK, OUTPUT);
   pinMode(SRDATA, OUTPUT);
 
-  attachInterrupt(digitalPinToInterrupt(BUTTONPIN), button1Down, FALLING);
-  attachInterrupt(digitalPinToInterrupt(MODEBUTTONPIN), button2Down, FALLING);
-
+  
+  //Set up RTC
   Wire.begin();
   Serial.begin(9600);
   
@@ -54,9 +90,9 @@ void setup() {
     ledDisplay(i,false);
     delay(50);
   }
-
   ledClear();
-  
+
+  //OK Beep Beep Let's Go!
   digitalWrite(BUZZPIN, HIGH);
   delay(50);
   digitalWrite(BUZZPIN, LOW);
@@ -68,10 +104,11 @@ void setup() {
 
 void loop() {
   //if button 1 is pressed, beep the time.
-  if(button1Wait){
+  if(button1Wait || snapReady){
     beepTime();
     ledClear();
     button1Wait = false;
+    snapReady = false;
   }
 
   //if button 2 is pressed, enter time set mode.
@@ -123,25 +160,43 @@ void readRTCTime(byte& hour, byte& minute, byte& second){
   }
 }
 
-//Interrupt Function for the pushbutton
-void button1Down(){
-  if(millis()-lastPress > BUTTONTIME){
-    lastPress = millis();
-    button1Wait = true;
-  }
+//New Timer Button Poll Interrupt
+ISR(TIMER1_COMPA_vect){
+   //Polls every 20ms for new input on button pins
+
+   //Slow Version
+   bool stateButton1 = digitalRead(BUTTONPIN);
+   bool stateButton2 = digitalRead(MODEBUTTONPIN);
+   //compare with last seen state. Do not trigger again until at least one interrupt is recorded with the buttons down.
+   if(stateButton1 != button1Last && stateButton1 == LOW)
+      button1Wait = true;
+
+   if(stateButton2 != button2Last&& stateButton2 == LOW)
+      button2Wait = true;
+
+   button1Last = stateButton1;
+   button2Last = stateButton2;
+
+   //Fast Version
+   //TODO
 }
 
-void button2Down(){
-  if(millis()-lastPress > BUTTONTIME){
-    lastPress = millis();
-    button2Wait = true;
+
+
+void soundRegistered(){
+  //The comparator has picked up a sound.
+  //In order to trigger the time output, the user will need to clap/snap twice with less than 400ms between them.
+  int now = millis();
+  if(now - lastSnap < SNAPDELAYMS){
+    snapReady = true;
   }
+  lastSnap = now;
 }
 
-void clearButtonRequest(){
-  lastPress = 0;
+void clearInputRequest(){
   button1Wait = false;
   button2Wait = false;
+  snapReady = false;
 }
 
 void buzzCount(int count,bool dp){
@@ -265,7 +320,7 @@ void setTimeMode(){
     }
     
   }
-  clearButtonRequest();
+  clearInputRequest();
 }
 
 void ledDisplay(int number, bool dp){
@@ -296,6 +351,6 @@ void beepTime(){
     buzzCount(minuteTenCount, true);
     delay(BETWEENDELAY);
     buzzCount(minuteOneCount, true);
-    clearButtonRequest();
+    clearInputRequest();
 }
 
