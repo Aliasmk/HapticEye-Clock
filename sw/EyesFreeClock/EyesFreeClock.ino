@@ -1,14 +1,16 @@
 #define VIBSIG 1            //the vibrator signal
 #define SOUNDCOMPIN 2       //the signal from the sound comparator
-//#define PIN3 3
-#define BUZZPIN 4           //the buzzer
+//#define PIN4 4
+#define BUZZPIN 3           //the buzzer
 #define BUTTONPIN 5         //the main button
 #define MODEBUTTONPIN 6     //the mode button
 //#define PIN7 7
 #define SRLATCH 8           //the shift register pins - latch
+#define WARMLED 9
+#define COOLLED 10
 #define SRDATA 11           //data
 #define SRCLK 12            //clock
-//define PIN13 13
+#define PIN13 13
 
 //Beep timings
 #define BETWEENDELAY 800    //time to wait between tens and ones etc.
@@ -17,11 +19,11 @@
 #define BEEPDELAY 200       //the spacing between beeps of the same group
 #define GROUPDELAYADD 40    //the amount of delay between groupings (ie ... ... .. to make 8)
 
-#define SNAPDELAYMS 400
+#define MINSNAPMILLIS 200
+#define MAXSNAPMILLIS 600
 
 #define enableSerial 0
 
-#include <assert.h>
 #include <DS3231.h>
 #include <Wire.h>
 
@@ -30,16 +32,17 @@ DS3231 Clock;
 bool H12 = false; //24 Hour Mode
 byte rtcHour, rtcMinute, rtcSecond;
 
+//INPUT FLAGS
 volatile bool button1Last = false;  //set to the previously recorded state of the buttons
 volatile bool button2Last = false;  //   so to avoid triggering every 20ms if held
 volatile bool button1Wait = false;  //triggered from interrupt if main button is pressed
 volatile bool button2Wait = false;  //triggered from interrupt if mode button is pressed
-
-volatile byte lastSnap = 0;
 volatile bool snapReady = false;
+volatile int lastSnap = 0;
 
-
+//STATE MACHINE
 bool timeSetMode = false;           //this flag will keep the program in time set mode.
+
 
 void setup() {
   
@@ -55,10 +58,6 @@ void setup() {
   TCCR1B |= (1 << CS12); //256 Prescaler
   TIMSK1 |= (1 << OCIE1A); //Timer interupt enable
 
-  //Port manipulation in timer interrupt will break if these assertions fail
-  assert(BUTTONPIN == 5);
-  assert(MODEBUTTONPIN == 6);
-
   sei();
 
   //Set up sound input interrupt
@@ -67,7 +66,7 @@ void setup() {
   //Set up Inputs
   pinMode(BUTTONPIN, INPUT);
   pinMode(MODEBUTTONPIN, INPUT);
-  pinMode(SOUNDCOMPIN, INPUT_PULLUP);
+  pinMode(SOUNDCOMPIN, INPUT);
 
   //Set up Outputs
   pinMode(VIBSIG, OUTPUT);
@@ -76,6 +75,8 @@ void setup() {
   pinMode(SRCLK, OUTPUT);
   pinMode(SRDATA, OUTPUT);
 
+  pinMode(PIN13, OUTPUT);
+  digitalWrite(PIN13,LOW);
   
   //Set up RTC
   Wire.begin();
@@ -93,16 +94,22 @@ void setup() {
   ledClear();
 
   //OK Beep Beep Let's Go!
-  digitalWrite(BUZZPIN, HIGH);
+  analogWrite(BUZZPIN, 4);
   delay(50);
   digitalWrite(BUZZPIN, LOW);
   delay(100);
-  digitalWrite(BUZZPIN, HIGH);
+  analogWrite(BUZZPIN, 4);
   delay(50);
   digitalWrite(BUZZPIN, LOW);
+  delay(500);
+
 }
 
 void loop() {
+  if(millis()-lastSnap > MAXSNAPMILLIS){
+      digitalWrite(PIN13,LOW);
+   }
+  
   //if button 1 is pressed, beep the time.
   if(button1Wait || snapReady){
     beepTime();
@@ -186,11 +193,12 @@ ISR(TIMER1_COMPA_vect){
 void soundRegistered(){
   //The comparator has picked up a sound.
   //In order to trigger the time output, the user will need to clap/snap twice with less than 400ms between them.
-  int now = millis();
-  if(now - lastSnap < SNAPDELAYMS){
-    snapReady = true;
-  }
-  lastSnap = now;
+    digitalWrite(PIN13,HIGH);
+    int now = millis();
+    if(now - lastSnap < MAXSNAPMILLIS && now - lastSnap > MINSNAPMILLIS){
+      snapReady = true;
+    }
+    lastSnap = now;
 }
 
 void clearInputRequest(){
@@ -204,14 +212,14 @@ void buzzCount(int count,bool dp){
   ledDisplay(count,dp);
 
   if(count == 0){
-    digitalWrite(BUZZPIN, HIGH);
+    analogWrite(BUZZPIN, 4);
     delay(ZEROBEEPTIME);
     digitalWrite(BUZZPIN, LOW);
     delay(BEEPDELAY);
   }
     
   for(int i = 1; i<=count; i++){
-    digitalWrite(BUZZPIN, HIGH);
+    analogWrite(BUZZPIN, 4);
     delay(NONZEROBEEPTIME);
     digitalWrite(BUZZPIN, LOW);
     delay(BEEPDELAY);
@@ -232,7 +240,7 @@ void setTimeMode(){
   //In general, pressing the main button will increment the number, and the mode button will increment to the next digit.
   ledDisplay(tempHourTen, false);
   while(timeSetMode){
-    digitalWrite(BUZZPIN, HIGH);
+    analogWrite(BUZZPIN, 2);
     delay(2);
     digitalWrite(BUZZPIN, LOW);
     delay(120);
@@ -344,6 +352,8 @@ void beepTime(){
     int minuteOneCount = rtcMinute%10;
     int minuteTenCount = (rtcMinute-minuteOneCount)/10;
 
+    delay(400);
+
     buzzCount(hourTenCount, false);
     delay(BETWEENDELAY);
     buzzCount(hourOneCount, false);
@@ -352,5 +362,6 @@ void beepTime(){
     delay(BETWEENDELAY);
     buzzCount(minuteOneCount, true);
     clearInputRequest();
+
 }
 
