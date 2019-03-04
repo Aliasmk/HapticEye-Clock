@@ -1,3 +1,10 @@
+/*            NoEye Haptic Clock                */
+/*                                              */
+/* Written by Michael Kafarowski 2019           */
+/* michael.kafarowski.com                       */
+/*                                              */
+
+
 #define VIBSIG 1            //the vibrator signal
 #define SOUNDCOMPIN 2       //the signal from the sound comparator
 //#define PIN4 4
@@ -364,4 +371,3 @@ void beepTime(){
     clearInputRequest();
 
 }
-
