@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name EFC-rescue)(type Legacy)(uri ${KIPRJMOD}/EFC-rescue.lib)(options "")(descr ""))
+)

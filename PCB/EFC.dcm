@@ -1,0 +1,20 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP DRV2605L
+D 2- to 5.2-V HapticDriverfor LRA and ERMwith EffectLibraryand Smart-LoopArchitecture
+K Haptic, Driver
+F http://www.ti.com/lit/ds/symlink/drv2605l.pdf
+$ENDCMP
+#
+$CMP MCP4725
+D 12-Bit Digital-to-Analog Converter with EEPROM Memory in SOT-23-6
+K DAC, 12-Bit, SOT-23-6
+F http://ww1.microchip.com/downloads/en/DeviceDoc/22039d.pdf
+$ENDCMP
+#
+$CMP SST25VF020B
+D 2 Mbit SPI Serial Flash
+F http://ww1.microchip.com/downloads/en/DeviceDoc/20005054C.pdf
+$ENDCMP
+#
+#End Doc Library
