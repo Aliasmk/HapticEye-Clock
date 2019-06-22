@@ -29,8 +29,12 @@ void announceTime(bool silent){
       hapticOutput(minuteOneCount, true);
       clearInputRequest();
     } else {
-      playAudio(0);
-      playAudio(1);
+      stopAudio();
+      loadTrack(1);
+      loadTrack(2);
+      loadTrack(0);
+      loadTrack(3);
+      playAudio();
     }
 }
 

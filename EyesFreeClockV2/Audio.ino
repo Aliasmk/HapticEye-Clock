@@ -1,14 +1,28 @@
-void playAudio(int track){
+void loadTrack(int track){
+  audioQueue[audioQueueIndex] = track;
+  audioQueueIndex++;
+}
 
-  audioData = audioTracks[track];
-    
-  audioPlaying = true;
-  audioSize = audioData[0];
-  audioFrameIndex = 1;
+void playAudio(){
+  int currentTrack = audioQueue[playerIndex];
+  if(currentTrack == -1){
+    stopAudio();
+  } else {
+    audioPlaying = true;
+    audioData = audioTracks[currentTrack];
+    audioSize = pgm_read_word(&audioData[0]);
+    audioFrameIndex = 1;
+  }
 }
 
 void stopAudio(){
   audioPlaying = false;
+  //reset the audio queue.
+  for(int i = 0; i<8; i++){
+    audioQueue[i] = -1;
+  }
+  audioQueueIndex = 0;
+  playerIndex = 0;
 }
 
 bool isPlaying(){
@@ -22,10 +36,16 @@ void processAudioFrame(){
     dac.setVoltage(pgm_read_word(&audioData[audioFrameIndex])>>4, false);
     audioFrameIndex++;
     if(audioFrameIndex < audioSize){
+      //play the next frame
       audioLastMicros = currentMicros;
     } else {
-      stopAudio();
-    }
+      if(++playerIndex != -1){
+        playAudio();
+      } else {
+        stopAudio();
+      }
+      
+    } 
     
   }
 }
