@@ -1076,11 +1076,11 @@ Wire Wire Line
 	3150 5000 2800 5000
 Wire Wire Line
 	2050 3150 2550 3150
-Text Label 2550 3150 2    39   ~ 0
+Text Label 2550 2850 2    39   ~ 0
 FLASH_EN
 Wire Wire Line
 	2050 2850 2550 2850
-Text Label 2550 2850 2    39   ~ 0
+Text Label 2550 3150 2    39   ~ 0
 SCLK
 Wire Wire Line
 	2050 2950 2550 2950

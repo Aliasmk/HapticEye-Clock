@@ -1,5 +1,5 @@
 (sym_lib_table
   (lib (name EFC-rescue)(type Legacy)(uri ${KIPRJMOD}/EFCv2-rescue.lib)(options "")(descr ""))
   (lib (name EFCv2-rescue)(type Legacy)(uri ${KIPRJMOD}/EFCv2-rescue.lib)(options "")(descr ""))
-  (lib (name EFC)(type Legacy)(uri "/Users/mkafarowski/SynologyDrive/Projects/2018/Eyes Free Clock/EFC.lib")(options "")(descr ""))
+  (lib (name EFC)(type Legacy)(uri ${KIPRJMOD}/../EFC.lib)(options "")(descr ""))
 )
