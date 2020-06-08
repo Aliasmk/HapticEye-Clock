@@ -5,6 +5,6 @@ This project is a haptic clock that vibrates a sequence indicating the digits of
 
 "Wait" - you may be thinking - "you are too sleepy to open your eyes but can decode the time from a sequence of vibrations?"
 
-A valid question indeed. Somewhat surprisingly, after only a few nights of practice, I was able to easily "read" the time even moments after waking up. I'm working hard on making sure the haptics are as high quality and as easily distinguishable as possible to make readings simple. If the haptics prove too challenging, there's also an option to have the clock audibly speak the time.
+A valid question indeed. Somewhat surprisingly, after only a few nights of practice I was able to easily "read" the time even moments after waking up. I'm working hard on making sure the haptics are of high quality and easily distinguishable to make readings simple. If the haptics prove too challenging, there's also an option to have the clock audibly speak the time.
 
 This repo contains code and the KiCAD project. I'm currently on board revision 3, and code is in the works.
