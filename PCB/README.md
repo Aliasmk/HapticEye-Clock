@@ -1,3 +1,3 @@
-#PCB Files
+# PCB Files
 
-*Current Revision:* V3
+**Current Revision:** V3
