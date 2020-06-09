@@ -6,40 +6,38 @@ MCP7940N::MCP7940N(MCP7940N_OSC_Type oscType, bool externalBattery) : oscMode(os
 }
 
 void MCP7940N::initialize(){    
-    Serial.println("RTC begin read RTC Reg");
+    Serial.println("[RTC]\tBegin read of RTC registers...");
     readAllRTCRegisters();
-    Serial.println("RTC start osc");
+    Serial.println("[RTC]\tStarting oscillator...");
     startOscillator();
     if(extBatt){
-        Serial.println("RTC enabling batt");
+        Serial.println("[RTC]\tEnabling battery backup...");
         enableBackupBattery();
     } else {
-        Serial.println("RTC disabling batt");
+        Serial.println("[RTC]\tDisabling battery backup...");
         disableBackupBattery();
     }
-    Serial.println("RTC setting trim");
+    Serial.println("[RTC]\tSetting trim...");
     setTrim(false, 0);
-    Serial.println("RTC done");
+    Serial.println("[RTC]\tInit complete");
 }
 
 // TODO give choice for time, alarm, or power down/up registers
 void MCP7940N::getTimeAndDate(RTCTime *time){
     readAllRTCRegisters();
     
-    Serial.print("Hour data: ");
-    Serial.println(registers[RTCHOUR]);
+    //Serial.println(registers[RTCHOUR]);
 
     time->second =      10 * ((registers[RTCSEC] & SEC_TENS_BITMASK) >> 4) + (registers[RTCSEC] & ONES_BITMASK);
     time->minute =      10 * ((registers[RTCMIN] & MIN_TENS_BITMASK) >> 4) + (registers[RTCMIN] & ONES_BITMASK);
     
     if((registers[RTCHOUR] & B01000000) == B00000000){
         // 24 hour time mode
-        Serial.println("Reading 24 hour time");
+        Serial.print("[RTC]\t24 hour time detected");
         time->hour =    10 * ((registers[RTCHOUR] & HOUR24_TENS_BITMASK) >> 4) + (registers[RTCHOUR] & ONES_BITMASK);
         time->ampm = TIME_24;
     } else {
         // 12 hour time mode
-        Serial.println("Reading 12 hour time");
         time->hour =    10 * ((registers[RTCHOUR] & HOUR12_TENS_BITMASK) >> 4) + (registers[RTCHOUR] & ONES_BITMASK);
         if((registers[RTCHOUR] & B00100000) == B00100000){
             // PM indicator set
@@ -63,7 +61,7 @@ void MCP7940N::setTimeAndDate(RTCTime *time){
     registers[RTCSEC] = (((time->second / 10) << 4) & SEC_TENS_BITMASK) + ((time->second % 10) & ONES_BITMASK);
     registers[RTCMIN] = (((time->minute / 10) << 4) & MIN_TENS_BITMASK) + ((time->minute % 10) & ONES_BITMASK);
     if(time->ampm == TIME_24){
-        Serial.print("24 hour mode detected: ");
+        Serial.print("[RTC]\tSetting in 24 hour mode");
         registers[RTCHOUR] = (((time->hour / 10) << 4) & HOUR24_TENS_BITMASK) + ((time->hour % 10) & ONES_BITMASK);
         registers[RTCHOUR] &= B10111111; // clear bit 6 to set to 24 hour mode
         Serial.println(registers[RTCHOUR]);
@@ -92,9 +90,9 @@ void MCP7940N::stopOscillator(){
     } else {
         writeRegister(CONTROL, 3, 0, 1); // Set EXTOSC (CONTROL BIT3) to 0 to stop oscillator
     }
-    Serial.print("waiting for oscillator to stop... ");
+    //Serial.print("[RTC]\tWaiting for oscillator to stop... ");
     while((readRegister(RTCWKDAY) & B00100000) != B00000000){} //wait until oscillator has stopped
-    Serial.println("done");
+    //Serial.println("done");
 }
 
 void MCP7940N::startOscillator(){
@@ -103,9 +101,9 @@ void MCP7940N::startOscillator(){
     } else {
         writeRegister(CONTROL, 3, 1, 1); // Set EXTOSC (CONTROL BIT3) to 1 to start oscillator
     }
-    Serial.print("re-enabling oscillator... ");
+    //Serial.print("[RTC]\tRe-enabling oscillator... ");
     while((readRegister(RTCWKDAY) & B00100000) != B00100000){} //wait until oscillator has started
-    Serial.println("done");
+    //Serial.println("done");
 }
 
 void MCP7940N::enableBackupBattery(){
@@ -163,30 +161,30 @@ uint8_t MCP7940N::readSRAM(uint8_t addr){
 }
 
 void MCP7940N::writeRegister(MCP7940N_Registers reg, uint8_t offset, uint8_t value, uint8_t len){
-    Serial.print("Writing RTC register ");
-    Serial.print(reg);
-    Serial.print("... ");
+    //Serial.print("Writing RTC register ");
+    //Serial.print(reg);
+    //Serial.print("... ");
     uint8_t bitmask = ((1 << len) - 1) << offset;
     uint8_t valueToWrite = value << offset;
     uint8_t regValue = readRegister(reg);
 
-    Serial.print("Bitmask: ");
-    Serial.print(bitmask);
+    //Serial.print("Bitmask: ");
+    //Serial.print(bitmask);
 
-    Serial.print(", value: ");
-    Serial.print(valueToWrite);
+    //Serial.print(", value: ");
+    //Serial.print(valueToWrite);
 
-    Serial.print(", was ");
-    Serial.print(regValue);
+    //Serial.print(", was ");
+    //Serial.print(regValue);
     regValue = (regValue & ~bitmask) | valueToWrite; 
     registers[reg] = regValue;
-    Serial.print(", now ");
-    Serial.print(regValue);
+    //Serial.print(", now ");
+    //Serial.print(regValue);
     Wire.beginTransmission(MCP7940N_ADDRESS);
     Wire.write(reg);
     Wire.write(regValue);
     Wire.endTransmission(true);
-    Serial.println("... Done.");
+    //Serial.println("... Done.");
 }
 
 void MCP7940N::writeAllRTCRegisters(){

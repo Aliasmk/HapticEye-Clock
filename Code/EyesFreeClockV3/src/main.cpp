@@ -15,6 +15,13 @@ typedef enum States{
   STATE_OUTPUT
 } States;
 
+typedef enum TimeSetStage{
+  TS_HOUR,
+  TS_MIN_TEN,
+  TS_MIN_ONE,
+  TS_AMPM
+} TimeSetStage;
+
 typedef enum OutputMode{
   OUTPUT_HAPTIC,
   OUTPUT_AUDIO
@@ -27,11 +34,36 @@ Haptics haptics;
 
 States state;
 OutputMode mode;
+TimeSetStage ts_stage;
+
+void changeState(States newState){
+  Serial.print("[MAIN]\tNew State: ");
+  Serial.println((int)newState);
+  state = newState;
+  if(state == STATE_TIME_SET){
+    ts_stage = TS_HOUR;
+    Serial.print("[MAIN]\tSetting Hour...");
+  }
+}
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("\r\n\nHello, from HapticEye by Michael Kafarowski.\n");
-  state = STATE_NORMAL;
+  Serial.println("\r\n\nHello, from HapticEye by Michael Kafarowski.");
+  
+  if(time.timeSetRequired()){
+    Serial.println("Time Set Required");
+    static int hour = 12;
+    static int minTens = 0;
+    static int minOnes = 0;
+    static bool pm = false;
+    changeState(STATE_TIME_SET);
+  } else {
+    char temp[32];
+    snprintf(temp, 32, "Current time: %d:%02d %s", time.getHours(), time.getMins(), time.isPM() ?  "pm" : "am");
+    Serial.println(temp);
+    Serial.println();
+    changeState(STATE_NORMAL);
+  }
 }
 
 void changeMode(){
@@ -54,6 +86,58 @@ void timeSet(){
     // If mode button pressed, increase count
     // If set button pressed, move to next digit
   
+  static int hour;
+  static int minTens;
+  static int minOnes;
+  static bool pm;
+
+  switch(ts_stage){
+    case TS_HOUR:
+      if(io.buttonClicked(BTN_MODE)){
+        hour++;
+        if(hour > 12){
+          hour = 1;
+        }
+      } else if(io.buttonClicked(BTN_SET)){
+        Serial.println("[MAIN]\tSetting Minute Tens...");
+        ts_stage = TS_MIN_TEN;
+      }    
+    break;
+
+    case TS_MIN_TEN:
+      if(io.buttonClicked(BTN_MODE)){
+        minTens++;
+        if(minTens > 5){
+          minTens = 0;
+        }
+      } else if(io.buttonClicked(BTN_SET)){
+        Serial.println("[MAIN]\tSetting Minute Ones...");
+        ts_stage = TS_MIN_ONE;
+      }  
+    break;
+
+    case TS_MIN_ONE:
+      if(io.buttonClicked(BTN_MODE)){
+        minOnes++;
+        if(minOnes > 9){
+          minOnes = 0;
+        }
+      } else if(io.buttonClicked(BTN_SET)){
+        Serial.println("[MAIN]\tSetting AM/PM...");
+        ts_stage = TS_AMPM;
+      }  
+    break;
+
+    case TS_AMPM:
+      if(io.buttonClicked(BTN_MODE)){
+        pm = !pm;
+      } else if(io.buttonClicked(BTN_SET)){
+        time.setTime(hour, minTens, minOnes, pm);
+        changeState(STATE_OUTPUT);
+      }  
+    break;
+  }
+
   // Hour:
     // Wait for mode button, speak entire hour when incremented
     // Wait for set button to move on
@@ -78,6 +162,7 @@ void timeSet(){
 }
 
 void outputTime(){
+  Serial.println("[MAIN]\tOutputting Time");
   // Get the current time
 
   // If mode is haptic:
@@ -85,14 +170,10 @@ void outputTime(){
 
   // If mode is audio:
     // Instruct audio to read the time value
-
+  changeState(STATE_NORMAL);
 }
 
-void changeState(States newState){
-  Serial.print("[MAIN]\tNew State: ");
-  Serial.println((int)newState);
-  state = newState;
-}
+
 
 
 void loop() {
