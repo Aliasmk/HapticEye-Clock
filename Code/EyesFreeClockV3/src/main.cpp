@@ -42,7 +42,7 @@ void changeState(States newState){
   state = newState;
   if(state == STATE_TIME_SET){
     ts_stage = TS_HOUR;
-    Serial.print("[MAIN]\tSetting Hour...");
+    Serial.println("[MAIN]\tSetting Hour...");
   }
 }
 

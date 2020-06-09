@@ -60,6 +60,7 @@ void HEyeO::tick(){
                 } else {
                     // Button has been pressed
                     Serial.print("pressed");
+                    btnStatus[i].clicked = false;
                 }
 
                 Serial.println();
@@ -90,7 +91,7 @@ bool HEyeO::buttonHeld(Button btn, int delay){
 }
 
 bool HEyeO::buttonClicked(Button btn){
-    if(btnStatus[(int)btn].clicked == true){
+    if(btnStatus[(int)btn].clicked == true && btnStatus[(int)btn].holdLock == false){
         btnStatus[(int)btn].clicked = false;
         return true;
     } else {
