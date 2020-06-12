@@ -7,7 +7,9 @@
 #include "haptics.hpp"
 #include "time.hpp"
 
-#define BTN_HOLD_DELAY 2500
+#include <RTCTime.hpp>
+
+#define BTN_HOLD_DELAY 1250
 
 typedef enum States{
   STATE_NORMAL,
@@ -22,6 +24,7 @@ typedef enum TimeSetStage{
   TS_AMPM
 } TimeSetStage;
 
+// TODO: Add slow haptic mode
 typedef enum OutputMode{
   OUTPUT_HAPTIC,
   OUTPUT_AUDIO
@@ -50,17 +53,14 @@ void setup() {
   Serial.begin(115200);
   Serial.println("\r\n\nHello, from HapticEye by Michael Kafarowski.");
   
+  time.init();
+  haptics.init();
+
   if(time.timeSetRequired()){
     Serial.println("Time Set Required");
-    static int hour = 12;
-    static int minTens = 0;
-    static int minOnes = 0;
-    static bool pm = false;
     changeState(STATE_TIME_SET);
   } else {
-    char temp[32];
-    snprintf(temp, 32, "Current time: %d:%02d %s", time.getHours(), time.getMins(), time.isPM() ?  "pm" : "am");
-    Serial.println(temp);
+    time.printTime();
     Serial.println();
     changeState(STATE_NORMAL);
   }
@@ -71,7 +71,7 @@ void changeMode(){
 
   if(mode == OUTPUT_AUDIO){
     mode = OUTPUT_HAPTIC;
-    // TODO haptic.vibrate(VIBE_SHORT_BLIP);
+    haptics.vibrateFree(500);
     
   } else if(mode == OUTPUT_HAPTIC){
     mode = OUTPUT_AUDIO;
@@ -86,10 +86,10 @@ void timeSet(){
     // If mode button pressed, increase count
     // If set button pressed, move to next digit
   
-  static int hour;
-  static int minTens;
-  static int minOnes;
-  static bool pm;
+  static int hour = 12;
+  static int minTens = 0;
+  static int minOnes = 0;
+  static bool pm = false;
 
   switch(ts_stage){
     case TS_HOUR:
@@ -137,51 +137,40 @@ void timeSet(){
       }  
     break;
   }
-
-  // Hour:
-    // Wait for mode button, speak entire hour when incremented
-    // Wait for set button to move on
-
-  // Mins (tens)
-    // Wait for mode button, speak tens digit of minute when incremented
-    // Wait for set button to move on
-
-  // Mins (ones)
-    // Wait for mode button, speak ones digit of minute when incremented
-    // Wait for set button to move on
-
-  // AM/PM
-    // Speak AM
-    // Wait for mode button, change AM/PM and speak
-    // Wait for set button to move on
-
-  // Confirmation
-    // Speak entire time
-
-  // Return to normal mode
 }
 
 void outputTime(){
   Serial.println("[MAIN]\tOutputting Time");
-  // Get the current time
+  RTCTime now;
+  time.getTime(&now);
 
-  // If mode is haptic:
-    // Instruct haptic processor to queue up the waveforms
+  delay(400);
 
-  // If mode is audio:
-    // Instruct audio to read the time value
+  switch(mode){
+    case OUTPUT_HAPTIC:
+      haptics.vibrateTime(now.hour, now.minute, now.ampm == TIME_PM ? true : false);
+    break;
+
+    case OUTPUT_AUDIO:
+
+    break;
+  }
   changeState(STATE_NORMAL);
 }
 
 
+unsigned long lastPingTime = 0;
 
 
 void loop() {
+  unsigned long now = millis();
+  
   // Wait for inputs
     // If mode button held, swap audio/haptic
     // If set button held, enter time set loop
     // If mode pressed, output the time
   io.tick();
+  haptics.tick();
 
   switch(state){
     case STATE_NORMAL:
@@ -192,6 +181,12 @@ void loop() {
       } else if(io.buttonClicked(BTN_MODE)){
           changeState(STATE_OUTPUT);
       }
+
+      if((now - lastPingTime) > 5000){
+        time.printTime();
+        lastPingTime = now;
+      }
+
     break;
 
     case STATE_TIME_SET:

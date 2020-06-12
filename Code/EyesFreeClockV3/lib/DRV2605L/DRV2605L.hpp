@@ -114,6 +114,7 @@ public:
     void setWaveformLibrary(WaveformLibrary lib);
     void queueWaveform(int index, int data, bool wait);
     void playWaveforms();
+    void stopWaveforms();
 
 //private:
     MotorType type_;

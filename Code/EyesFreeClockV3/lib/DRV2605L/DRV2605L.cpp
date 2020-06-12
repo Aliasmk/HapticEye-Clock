@@ -83,6 +83,10 @@ void DRV2605L::playWaveforms(){
     writeRegister(GO, 0, 1, 1);
 }
 
+void DRV2605L::stopWaveforms(){
+    writeRegister(GO, 0, 0, 1);
+}
+
 void DRV2605L::autoCalibrate(){
     writeRegister(FEEDBACK_CTRL, N_ERM_LRA_OFFSET, 0x0, 1);
     writeRegister(FEEDBACK_CTRL, FB_BRAKE_FACTOR_OFFSET, 0x2, 3);
