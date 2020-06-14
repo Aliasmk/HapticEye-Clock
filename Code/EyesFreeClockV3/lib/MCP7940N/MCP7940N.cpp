@@ -6,20 +6,20 @@ MCP7940N::MCP7940N(MCP7940N_OSC_Type oscType, bool externalBattery) : oscMode(os
 }
 
 void MCP7940N::initialize(){    
-    Serial.println("[RTC]\tBegin read of RTC registers...");
+    Serial.println(F("[RTC]\tBegin read of RTC registers..."));
     readAllRTCRegisters();
-    Serial.println("[RTC]\tStarting oscillator...");
+    Serial.println(F("[RTC]\tStarting oscillator..."));
     startOscillator();
     if(extBatt){
-        Serial.println("[RTC]\tEnabling battery backup...");
+        Serial.println(F("[RTC]\tEnabling battery backup..."));
         enableBackupBattery();
     } else {
-        Serial.println("[RTC]\tDisabling battery backup...");
+        Serial.println(F("[RTC]\tDisabling battery backup..."));
         disableBackupBattery();
     }
-    Serial.println("[RTC]\tSetting trim...");
+    Serial.println(F("[RTC]\tSetting trim..."));
     setTrim(false, 0);
-    Serial.println("[RTC]\tInit complete");
+    Serial.println(F("[RTC]\tInit complete"));
 }
 
 // TODO give choice for time, alarm, or power down/up registers
@@ -61,10 +61,10 @@ void MCP7940N::setTimeAndDate(RTCTime *time){
     registers[RTCSEC] = (((time->second / 10) << 4) & SEC_TENS_BITMASK) + ((time->second % 10) & ONES_BITMASK);
     registers[RTCMIN] = (((time->minute / 10) << 4) & MIN_TENS_BITMASK) + ((time->minute % 10) & ONES_BITMASK);
     if(time->ampm == TIME_24){
-        Serial.print("[RTC]\tSetting in 24 hour mode");
+        //Serial.print("[RTC]\tSetting in 24 hour mode");
         registers[RTCHOUR] = (((time->hour / 10) << 4) & HOUR24_TENS_BITMASK) + ((time->hour % 10) & ONES_BITMASK);
         registers[RTCHOUR] &= B10111111; // clear bit 6 to set to 24 hour mode
-        Serial.println(registers[RTCHOUR]);
+        //Serial.println(registers[RTCHOUR]);
     } else {
         registers[RTCHOUR] = (((time->hour / 10) << 4) & HOUR12_TENS_BITMASK) + ((time->hour % 10) & ONES_BITMASK);
         if(time->ampm == TIME_AM){

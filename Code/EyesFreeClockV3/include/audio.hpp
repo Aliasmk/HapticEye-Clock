@@ -9,12 +9,12 @@
 
 class Audio {
 public:
-    Audio() : eeprom(PIN_EEPROM_CS), dac(PIN_DAC_EN, DAC_MODE_10BIT) {}
+    Audio() : mem(PIN_EEPROM_CS), dac(PIN_DAC_EN, DAC_MODE_10BIT) {}
 
-    void speak(AudioClip clip);
+    void speak(AudioClipEnum clip);
 
 private:
-    AT25M01 eeprom;
+    AT25M01 mem;
     LTC2630 dac;
 
     bool audioPlaying;

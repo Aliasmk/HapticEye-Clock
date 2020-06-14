@@ -38,28 +38,28 @@ void HEyeO::tick(){
             // Button state has changed
             
             if((now - btnStatus[i].timeSwitched) > DEBOUNCE_TIME_MIN_MS){
-                Serial.print("[IO]\tChange in Button ");
+                Serial.print(F("[IO]\tChange in Button "));
                 Serial.print(i);
-                Serial.print(" - ");
+                Serial.print(F(" - "));
                 // State change probably wasn't a bounce
                 
                 if(currentButtonState == HIGH){
                     // Button has been released
                     btnStatus[i].holdLock = false;
                     
-                    Serial.print("released ");
+                    Serial.print(F("released "));
                     if((now - btnStatus[i].timeSwitched) < CLICK_TIME_MAX_MS){
                         // Button was clicked
                         btnStatus[i].clicked = true;
-                        Serial.print("(click)");
+                        Serial.print(F("(click)"));
                     } else {
-                        Serial.print("(held ");
+                        Serial.print(F("(held "));
                         Serial.print(now - btnStatus[i].timeSwitched);
-                        Serial.print(" ms)");
+                        Serial.print(F(" ms)"));
                     }
                 } else {
                     // Button has been pressed
-                    Serial.print("pressed");
+                    Serial.print(F("pressed"));
                     btnStatus[i].clicked = false;
                 }
 
@@ -80,9 +80,9 @@ void HEyeO::tick(){
 bool HEyeO::buttonHeld(Button btn, int delay){
     long now = millis();
     if((now - btnStatus[(int)btn].timeSwitched) > delay && btnStatus[(int)btn].lastState == LOW && btnStatus[(int)btn].holdLock == false){
-        Serial.print("[IO]\tButton held longer than requested delay (");
+        Serial.print(F("[IO]\tButton held longer than requested delay ("));
         Serial.print(delay);
-        Serial.println(" ms)");
+        Serial.println(F(" ms)"));
         btnStatus[(int)btn].holdLock = true;
         return true;
     } else {

@@ -6,10 +6,13 @@
 #include "audio.hpp"
 #include "haptics.hpp"
 #include "time.hpp"
+#include "memoryloader.hpp"
 
 #include <RTCTime.hpp>
 
 #define BTN_HOLD_DELAY 1250
+
+//Note for strings: https://www.baldengineer.com/arduino-f-macro.html
 
 typedef enum States{
   STATE_NORMAL,
@@ -40,24 +43,33 @@ OutputMode mode;
 TimeSetStage ts_stage;
 
 void changeState(States newState){
-  Serial.print("[MAIN]\tNew State: ");
+  Serial.print(F("[MAIN]\tNew State: "));
   Serial.println((int)newState);
   state = newState;
   if(state == STATE_TIME_SET){
     ts_stage = TS_HOUR;
-    Serial.println("[MAIN]\tSetting Hour...");
+    Serial.println(F("[MAIN]\tSetting Hour..."));
   }
 }
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println("\r\n\nHello, from HapticEye by Michael Kafarowski.");
+  Serial.begin(19200);
+  Serial.println(F("\r\n\nHello, from HapticEye by Michael Kafarowski."));
+  
+  if(digitalRead(PIN_BTN_MODE) == LOW && digitalRead(PIN_BTN_SET) == LOW){
+    // Activate memory loader mode
+    Serial.println(F("Activing memory loader..."));
+    MemoryLoader ml;
+    ml.start(); //never returns
+  }
+
   
   time.init();
   haptics.init();
+  audio.speak(CLIP_HELLO);
 
   if(time.timeSetRequired()){
-    Serial.println("Time Set Required");
+    Serial.println(F("Time Set Required"));
     changeState(STATE_TIME_SET);
   } else {
     time.printTime();
@@ -68,16 +80,15 @@ void setup() {
 
 void changeMode(){
   // Swap the output mode
-
   if(mode == OUTPUT_AUDIO){
     mode = OUTPUT_HAPTIC;
     haptics.vibrateFree(500);
     
   } else if(mode == OUTPUT_HAPTIC){
     mode = OUTPUT_AUDIO;
-    // TODO audio.speak(HELLO);
+    audio.speak(CLIP_HELLO);
   }
-  Serial.print("[MAIN]\tNew Mode: ");
+  Serial.print(F("[MAIN]\tNew Mode: "));
   Serial.println(mode);
 }
 
@@ -99,7 +110,7 @@ void timeSet(){
           hour = 1;
         }
       } else if(io.buttonClicked(BTN_SET)){
-        Serial.println("[MAIN]\tSetting Minute Tens...");
+        Serial.println(F("[MAIN]\tSetting Minute Tens..."));
         ts_stage = TS_MIN_TEN;
       }    
     break;
@@ -111,7 +122,7 @@ void timeSet(){
           minTens = 0;
         }
       } else if(io.buttonClicked(BTN_SET)){
-        Serial.println("[MAIN]\tSetting Minute Ones...");
+        Serial.println(F("[MAIN]\tSetting Minute Ones..."));
         ts_stage = TS_MIN_ONE;
       }  
     break;
@@ -123,7 +134,7 @@ void timeSet(){
           minOnes = 0;
         }
       } else if(io.buttonClicked(BTN_SET)){
-        Serial.println("[MAIN]\tSetting AM/PM...");
+        Serial.println(F("[MAIN]\tSetting AM/PM..."));
         ts_stage = TS_AMPM;
       }  
     break;
@@ -140,7 +151,7 @@ void timeSet(){
 }
 
 void outputTime(){
-  Serial.println("[MAIN]\tOutputting Time");
+  Serial.println(F("[MAIN]\tOutputting Time"));
   RTCTime now;
   time.getTime(&now);
 

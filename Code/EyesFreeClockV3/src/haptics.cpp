@@ -18,7 +18,7 @@ void Haptics::tick(){
     long now = millis();
     if(freeVibeEnabled && (now > freeVibeEndTime)){
         // Free vibration time expired
-        Serial.println("[VIBE] Vibe expired!");
+        Serial.println(F("[VIBE] Vibe expired!"));
         stopVibration();
         freeVibeEnabled = false;
     }
@@ -26,9 +26,9 @@ void Haptics::tick(){
 }
 
 void Haptics::vibrateFree(uint16_t vibeTime){
-    Serial.print("[VIBE]\t Free vibin' for ");
+    Serial.print(F("[VIBE]\t Free vibin' for "));
     Serial.print(vibeTime);
-    Serial.println(" ms");
+    Serial.println(F(" ms"));
     long now = millis();
     freeVibeEnabled = true;
     freeVibeEndTime = now + vibeTime;

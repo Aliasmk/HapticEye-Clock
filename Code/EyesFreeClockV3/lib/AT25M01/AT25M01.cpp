@@ -27,6 +27,8 @@ AT25M01::AT25M01(uint8_t cs) : cs_(cs){
 }
 
 void AT25M01::write(const uint8_t *src, const uint32_t dst, uint8_t len){
+    while(!isReady()){}
+    
     // Disable the write protection
     SPI.beginTransaction(EEPROM_SPI_Settings);
     digitalWrite(cs_, LOW);
@@ -48,15 +50,19 @@ void AT25M01::write(const uint8_t *src, const uint32_t dst, uint8_t len){
 
     // Transfer the data
     for(int i = 0; i<len; i++){
-        SPI.transfer((uint8_t)src[i]);     
+        SPI.transfer((uint8_t)src[i]);
     }
+
+    
 
     // End the transmission
     digitalWrite(cs_, HIGH);
     SPI.endTransaction();
 }
 
-uint8_t AT25M01::read(const uint8_t src){
+uint8_t AT25M01::read(const uint32_t src){
+    while(!isReady()){}
+    
     uint8_t value;
     
     // Begin the write transmission
@@ -81,7 +87,9 @@ uint8_t AT25M01::read(const uint8_t src){
     return value;
 }
 
-void AT25M01::read(const uint8_t src, uint8_t *dst, uint32_t len){
+void AT25M01::read(const uint32_t src, uint8_t *dst, uint32_t len){
+    while(!isReady()){}
+    
     // Begin the write transmission
     SPI.beginTransaction(EEPROM_SPI_Settings);
     digitalWrite(cs_, LOW);

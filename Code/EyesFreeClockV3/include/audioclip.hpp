@@ -5,8 +5,7 @@
 
 // This file contains metadata about the audio clips stored on the memory
 
-
-typedef enum AudioClip {
+typedef enum AudioClipEnum {
     CLIP_HELLO,
     CLIP_OCLOCK,
     CLIP_AM,
@@ -35,19 +34,29 @@ typedef enum AudioClip {
     CLIP_FOURTY,
     CLIP_FIFTY,
     NUM_CLIPS
-} AudioClip;
+} AudioClipEnum;
 
-struct clipMetadata{
-    AudioClip index;
-    uint16_t startAddr;
-    uint16_t size;
-};
+typedef struct clipMetadata{
+        AudioClipEnum index;
+        uint16_t startAddr;
+        uint16_t size;
+} clipMetadata;
 
 const clipMetadata data[] = {
-    { CLIP_HELLO, 0, 1000 },
-    { CLIP_AM, 1000, 1500 },
-    { CLIP_PM, 2500, 600 }
+    { CLIP_HELLO, 0, 10240 }
     // TODO populate when data package complete
+};
+
+class AudioClip{
+public:
+    static uint16_t getClipAddress(AudioClipEnum clip){
+        return data[clip].startAddr;
+    } 
+    static uint16_t getClipSize(AudioClipEnum clip){
+        return data[clip].size;
+    } 
+private:
+    
 };
 
 #endif
