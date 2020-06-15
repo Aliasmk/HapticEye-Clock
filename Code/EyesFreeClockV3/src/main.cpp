@@ -66,10 +66,10 @@ void setup() {
     ml.start(); //never returns
   }
 
-  
   time.init();
   haptics.init();
   audio.speak(CLIP_HELLO);
+  delay(10);
 
   if(time.timeSetRequired()){
     Serial.println(F("Time Set Required"));
