@@ -3,15 +3,14 @@
 #include <AT25M01.hpp>
 #include "memoryloader.hpp"
 #include "pins.hpp"
+#include <stdlib.h>
 
 void MemoryLoader::start(){
     Serial.println(F("Memory Loader Activated"));
     AT25M01 mem(PIN_EEPROM_CS);
     bool moreFiles = true;
-    int size = 0;
-    int chunks = 0;
-    int remainder = 0;
-    int startAddr = 0;
+    uint32_t size = 0;
+    uint32_t startAddr = 0;
     char buffer[32];
 
     
@@ -20,14 +19,14 @@ void MemoryLoader::start(){
         // Right now it's up to you to know the sizes and addresses of the stored files, as there is no filesystem/manifest
         Serial.println(F("Ready. Enter size:"));
         getSerialInput(buffer, 32);
-        size = atoi(buffer);
+        size = strtoul(buffer, NULL, 0);
 
         if(size % 256 != 0){
             int chunks = size / 256;
             size = 256 * chunks;
-            snprintf(buffer, 32, "[NOTE] Floored to %u", size);
+            snprintf(buffer, 32, "[NOTE] Floored to %lu", size);
         } else {
-            snprintf(buffer, 32, "OK, %d", size);
+            snprintf(buffer, 32, "OK, %lu", size);
         }
         
         Serial.println(buffer);
@@ -35,18 +34,17 @@ void MemoryLoader::start(){
         do{
             Serial.println(F("Enter Start Addr: "));
             getSerialInput(buffer, 32);
-            startAddr = atoi(buffer);
+            startAddr = strtoul(buffer, NULL, 0);
             if(startAddr % 256 != 0){
                 Serial.println(F("[ERROR] Start address must be a multiple of 256")); 
             }
         } while(startAddr % 256 != 0);
 
-        snprintf(buffer, 32, "OK, %d. Send Data Now.", startAddr);
+        snprintf(buffer, 32, "OK, %lu. Send Data Now.", startAddr);
         Serial.println(buffer);
         // Serial is 9600 baud, so it sends at 1.2KB per second. 
-        // SPI sends a total of 24 bits but operates at 15MHz, which comes out to 625KB per second
         int count = 0;
-        int bytesTransferred = 0;
+        uint32_t bytesTransferred = 0;
         uint8_t indata[256];
         while(bytesTransferred < size){
             if(Serial.available()){
@@ -103,6 +101,7 @@ void MemoryLoader::getSerialInput(char* dst, int bsize){
     while(!cmdcplt){
         if(Serial.available()){
             buffer[count] = Serial.read();
+            Serial.print(buffer[count]);
             if(buffer[count] == '\r' || buffer[count] == '\n'){
                 buffer[count] = '\0';
                 cmdcplt = true;
@@ -111,5 +110,7 @@ void MemoryLoader::getSerialInput(char* dst, int bsize){
             }
         }
     }
-    strncpy(dst, buffer, bsize);
+    while(Serial.available()){}
+    Serial.println(buffer);
+    strncpy(dst, buffer, min(bsize, count));
 }

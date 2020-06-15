@@ -49,6 +49,9 @@ void changeState(States newState){
   if(state == STATE_TIME_SET){
     ts_stage = TS_HOUR;
     Serial.println(F("[MAIN]\tSetting Hour..."));
+    audio.speak(CLIP_SET);
+    delay(100);
+    audio.speak(CLIP_HOUR);
   }
 }
 
@@ -74,6 +77,7 @@ void setup() {
   } else {
     time.printTime();
     Serial.println();
+    Serial.println(F("Time Previously Set"));
     changeState(STATE_NORMAL);
   }
 }
@@ -112,6 +116,11 @@ void timeSet(){
       } else if(io.buttonClicked(BTN_SET)){
         Serial.println(F("[MAIN]\tSetting Minute Tens..."));
         ts_stage = TS_MIN_TEN;
+        audio.speak(CLIP_SET);
+        delay(100);
+        audio.speak(CLIP_MINUTES);
+        delay(100);
+        audio.speakNumber(10);
       }    
     break;
 
@@ -124,6 +133,11 @@ void timeSet(){
       } else if(io.buttonClicked(BTN_SET)){
         Serial.println(F("[MAIN]\tSetting Minute Ones..."));
         ts_stage = TS_MIN_ONE;
+        audio.speak(CLIP_SET);
+        delay(100);
+        audio.speak(CLIP_MINUTES);
+        delay(100);
+        audio.speakNumber(1, false);
       }  
     break;
 
@@ -136,6 +150,11 @@ void timeSet(){
       } else if(io.buttonClicked(BTN_SET)){
         Serial.println(F("[MAIN]\tSetting AM/PM..."));
         ts_stage = TS_AMPM;
+        audio.speak(CLIP_SET);
+        delay(100);
+        audio.speak(CLIP_AM);
+        delay(100);
+        audio.speak(CLIP_PM);
       }  
     break;
 
@@ -163,7 +182,7 @@ void outputTime(){
     break;
 
     case OUTPUT_AUDIO:
-
+      audio.speakTime(now.hour, now.minute, now.ampm == TIME_PM ? true : false);
     break;
   }
   changeState(STATE_NORMAL);

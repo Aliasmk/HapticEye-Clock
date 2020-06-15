@@ -12,7 +12,9 @@ public:
     Audio() : mem(PIN_EEPROM_CS), dac(PIN_DAC_EN, DAC_MODE_10BIT) {}
 
     void speak(AudioClipEnum clip);
-
+    void speakTime(uint8_t hour, uint8_t minute, bool pm);
+    void speakNumber(int number);
+    void speakNumber(int number, bool oh);
 private:
     AT25M01 mem;
     LTC2630 dac;
